@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,6 +27,7 @@ namespace PointCloudAnalyze.Views
         {
 
             InitializeComponent();
+            this.Title = this.Title + $" (ver.{Assembly.GetExecutingAssembly().GetName().Version.ToString()})";
             Debug.WriteLine("InitializeComponent MainView");
             PointCloudAnalyzeViewModel vm = new PointCloudAnalyzeViewModel();
             vm.CloseRequest += (s, e) => this.Close();

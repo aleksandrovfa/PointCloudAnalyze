@@ -4,12 +4,39 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:local="clr-namespace:PointCloudAnalyze.Views"
+        xmlns:viewmodels="clr-namespace:PointCloudAnalyze.ViewModels"
+        d:DataContext="{d:DesignInstance Type=viewmodels:PointCloudAnalyzeViewModel}"
         mc:Ignorable="d"
         Height="100"
-        Width="100"
-        d:DesignHeight="450"
-        d:DesignWidth="800">
+        Width="280"
+        ResizeMode="NoResize"
+        Title="Перекрытие к облаку">
     <Grid>
-
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="Шаг сетки:" 
+                       Margin="5"
+                       VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1"
+                     Margin="5"
+                     Text="{Binding Step}" />
+            <TextBlock Grid.Column="2"
+                       Text="мм"
+                       Margin="5"
+                       VerticalAlignment="Center" />
+        </Grid>
+        <Button Grid.Row="1"
+                Margin="5"
+                Content="Старт"
+                Command="{Binding StartCommand}" />
     </Grid>
 </Window>
