@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34322.80
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PointCloudAnalyze", "PointCloudAnalyze.csproj", "{48B29BB2-E7D9-4AA3-8692-0959230753E9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Build-R19|Any CPU = Build-R19|Any CPU
+		Build-R22|Any CPU = Build-R22|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48B29BB2-E7D9-4AA3-8692-0959230753E9}.Build-R19|Any CPU.ActiveCfg = Build-R19|Any CPU
+		{48B29BB2-E7D9-4AA3-8692-0959230753E9}.Build-R19|Any CPU.Build.0 = Build-R19|Any CPU
+		{48B29BB2-E7D9-4AA3-8692-0959230753E9}.Build-R22|Any CPU.ActiveCfg = Build-R22|Any CPU
+		{48B29BB2-E7D9-4AA3-8692-0959230753E9}.Build-R22|Any CPU.Build.0 = Build-R22|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {627A7244-0ED1-4CD8-B989-BE0F1A0A9C32}
+	EndGlobalSection
+EndGlobal

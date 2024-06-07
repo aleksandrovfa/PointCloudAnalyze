@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Assembly>PointCloudAnalyze\PointCloudAnalyze.dll</Assembly>
+    <ClientId>ddec9aa9-6581-49d0-9ba2-468a5a3f8af5</ClientId>
+    <FullClassName>PointCloudAnalyze.PointCloudAnalyzeCmd</FullClassName>
+    <Text>PointCloudAnalyze</Text>
+    <VisibilityMode>AlwaysVisible</VisibilityMode>
+    <VendorId>FedorAleksandrov</VendorId>
+    <VendorDescription>Autodesk, www.autodesk.com</VendorDescription>
+  </AddIn>
+</RevitAddIns>
