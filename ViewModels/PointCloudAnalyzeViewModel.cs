@@ -17,6 +17,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Settings = PointCloudAnalyze.Properties.Settings;
 using Transform = Autodesk.Revit.DB.Transform;
+using Revit.Async;
 
 namespace PointCloudAnalyze.ViewModels
 {
@@ -26,7 +27,7 @@ namespace PointCloudAnalyze.ViewModels
         private ICommand _startCommand;
         public ICommand StartCommand => _startCommand ?? (_startCommand = new RelayCommand(param => Start()));
 
-        public double Step 
+        public double Step
         {
             get
             {
@@ -46,52 +47,67 @@ namespace PointCloudAnalyze.ViewModels
 
         public PointCloudAnalyzeViewModel()
         {
-         
+
         }
 
-        private void Start()
+        private async void Start()
         {
-            ExportGeometryToXml.FolderName = ((RbsLogger.Logger)Debug.Listeners[0]).filePath2;
-            ExportGeometryToXml.ExportUnits = ExportUnits.Mm;
-
-
-            if (!(RevitApi.Doc.ActiveView is View3D))
+            try
             {
-                MessageBox.Show("Перейдите на 3D вид");
-                return;
+
+                await RevitTask.RunAsync(app =>
+                {
+                    ExportGeometryToXml.FolderName = ((RbsLogger.Logger)Debug.Listeners[0]).filePath2;
+                    ExportGeometryToXml.ExportUnits = ExportUnits.Mm;
+
+
+                    if (!(RevitApi.Doc.ActiveView is View3D))
+                    {
+                        MessageBox.Show("Перейдите на 3D вид");
+                        return;
+                    }
+
+
+                    if (!(RevitApi.Doc.ActiveView as View3D).IsSectionBoxActive)
+                    {
+                        MessageBox.Show("Не найдены границы 3D вида");
+                        return;
+                    }
+
+                    BoundingBoxXYZ bb = (RevitApi.Doc.ActiveView as View3D).GetSectionBox();
+
+
+                    Floor floor = bb.GetElementFromBoundingBox<Floor>();
+                    if (floor == null)
+                    {
+                        MessageBox.Show("Перекрытие не найдено");
+                        return;
+                    }
+
+                    PointCloudInstance cloud = bb.GetElementFromBoundingBox<PointCloudInstance>();
+                    if (cloud == null)
+                    {
+                        MessageBox.Show("Облако точек не найдено");
+                        return;
+                    }
+
+                    CloudToFloor cloudToFloor = new CloudToFloor(cloud, floor, bb, StepRevit);
+
+                    Transaction tr = new Transaction(RevitApi.Doc, "CloudToFloor");
+                    tr.Start();
+
+                    cloudToFloor.Start();
+
+                    tr.Commit();
+
+                });
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString(), "Что то поломалось... Скоро починим");
             }
 
-            BoundingBoxXYZ bb = (RevitApi.Doc.ActiveView as View3D).GetSectionBox();
-
-
-            if (bb == null)
-            {
-                MessageBox.Show("Не найдены границы 3Dв ида");
-                return;
-            }
-
-            Floor floor = bb.GetElementFromBoundingBox<Floor>();
-            if (floor == null)
-            {
-                MessageBox.Show("Перекрытие не найдено");
-                return;
-            }
-
-            PointCloudInstance cloud = bb.GetElementFromBoundingBox<PointCloudInstance>();
-            if (cloud == null)
-            {
-                MessageBox.Show("Облако точек не найдено");
-                return;
-            }
            
-            CloudToFloor cloudToFloor = new CloudToFloor(cloud, floor, bb, StepRevit); 
-
-            Transaction tr = new Transaction(RevitApi.Doc, "CloudToFloor");
-            tr.Start();
-
-            cloudToFloor.Start();
-
-            tr.Commit();
         }
     }
 }

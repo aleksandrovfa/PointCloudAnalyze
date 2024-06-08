@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Transform = Autodesk.Revit.DB.Transform;
@@ -17,7 +18,7 @@ namespace PointCloudAnalyze.Models
 
         public Floor Floor { get; set; }
         public PointCloudInstance Cloud { get; set; }
-        public double StepRevit {  get; set; }
+        public double StepRevit { get; set; }
 
         public BoundingBoxXYZ BB { get; set; }
         public CloudToFloor(PointCloudInstance cloud, Floor floor, BoundingBoxXYZ bb, double step)
@@ -30,6 +31,24 @@ namespace PointCloudAnalyze.Models
 
         public void Start()
         {
+
+
+            List<BoundingBoxXYZ> bbs = SplitBoundingBox(BB, StepRevit);
+
+            if (bbs.Count() > 200)
+            {
+                var result = MessageBox.Show($"Ограничивающая рамка разбилась на {bbs.Count} частей. " +
+                    $"Анализ может занять длительное время. \n\n" +
+                    $"Вы уверены что хотите продолжить?", "Проблемка.", MessageBoxButton.YesNo);
+
+                if (result == MessageBoxResult.No)
+                {
+                    return;
+                }
+            }
+
+
+
             List<XYZ> points = GetPointsInside(StepRevit, Cloud, BB);
 
             ExportGeometryToXml.ExportPoints(points, "p");
@@ -39,13 +58,19 @@ namespace PointCloudAnalyze.Models
 
             foreach (SlabShapeVertex vertex in Floor.SlabShapeEditor.SlabShapeVertices)
             {
-                XYZ p = vertex.Position;
-                if (BB.Contains(p))
+                if (vertex.VertexType == SlabShapeVertexType.Corner)
                 {
-                    if (!points.Contains(p, new ComparePoint()))
+                    XYZ p = vertex.Position;
+                    if (BB.Contains(p))
                     {
+                        //if (!points.Contains(p, new ComparePoint()))
+                        //{
                         double offset = GetOffsetPointSketch(p, Cloud, BB);
-                        editor.ModifySubElement(vertex, offset);
+                        if (offset != 0)
+                        {
+                            editor.ModifySubElement(vertex, offset);
+                        }
+                        // }
                     }
                 }
             }
@@ -57,39 +82,15 @@ namespace PointCloudAnalyze.Models
 
         }
 
-
-        private double GetOffsetPointSketch(XYZ p, PointCloudInstance cloud, BoundingBoxXYZ bb)
-        {
-            BoundingBoxXYZ newbb = bb.SetTransform();
-
-            BoundingBoxXYZ bbpoint = new BoundingBoxXYZ();
-
-            XYZ max = new XYZ(p.X + 200 / 304.8, p.Y + 200 / 304.8, newbb.Max.Z);
-            XYZ min = new XYZ(p.X - 200 / 304.8, p.Y - 200 / 304.8, newbb.Min.Z);
-
-            bbpoint.Max = max;
-            bbpoint.Min = min;
-            ExportGeometryToXml.ExportSolid(bbpoint.CreateSolidFromBoundingBox(), "sketchP");
-
-            XYZ result = GetPoint(bbpoint, cloud);
-
-            if (result != null)
-            {
-                return result.Z - p.Z;
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
         private static List<XYZ> GetPointsInside(double step, PointCloudInstance cloud, BoundingBoxXYZ bb)
         {
             List<XYZ> points = new List<XYZ>();
 
             ExportGeometryToXml.ExportSolid(bb.CreateSolidFromBoundingBox(), "Source");
 
-            foreach (var bbSplit in SplitBoundingBox(bb, step))
+            List<BoundingBoxXYZ> bbs = SplitBoundingBox(bb, step);
+
+            foreach (var bbSplit in bbs)
             {
                 XYZ p = GetPoint(bbSplit, cloud);
                 ExportGeometryToXml.ExportSolid(bbSplit.CreateSolidFromBoundingBox(), "SplitSource");
@@ -101,6 +102,34 @@ namespace PointCloudAnalyze.Models
 
             return points;
         }
+
+
+        private double GetOffsetPointSketch(XYZ p, PointCloudInstance cloud, BoundingBoxXYZ bb)
+        {
+            BoundingBoxXYZ newbb = bb.SetTransform();
+
+            BoundingBoxXYZ bbpoint = new BoundingBoxXYZ();
+
+            XYZ max = new XYZ(p.X + 500 / 304.8, p.Y + 500 / 304.8, newbb.Max.Z);
+            XYZ min = new XYZ(p.X - 500 / 304.8, p.Y - 500 / 304.8, newbb.Min.Z);
+
+            bbpoint.Max = max;
+            bbpoint.Min = min;
+            ExportGeometryToXml.ExportSolid(bbpoint.CreateSolidFromBoundingBox(), "sketchP");
+
+            XYZ result = GetPoint(bbpoint, cloud);
+
+            if (result != null)
+            {
+                return Math.Round(Math.Abs(result.Z - p.Z),3);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+       
 
 
         public static List<BoundingBoxXYZ> SplitBoundingBox(BoundingBoxXYZ bb, double step)

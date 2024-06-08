@@ -85,7 +85,7 @@ namespace PointCloudAnalyze.Models
             if (result.Count > 1)
             {
                 var messageResult = MessageBox.Show($"В ограничевающую рамку попало больше одного элемента категории ({result[0].Category.Name}) \n" +
-                    $"Выбрать елемент вручную?", "Проблемка", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                    $"Выбрать элемент вручную?", "Проблемка", MessageBoxButton.OKCancel, MessageBoxImage.Question);
 
                 if (messageResult == MessageBoxResult.OK)
                 {
