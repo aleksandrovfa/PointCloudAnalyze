@@ -32,15 +32,16 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="NewtonSoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Revit 2022\NewtonSoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="Revit.Async">
       <HintPath>O:\Etalon Project\KPO\Revit\!_БИБЛИОТЕКА РЕСУРСОВ\07_ПЛАГИНЫ\ЭталонПроект\DLL\__Эталон Проект_2019\Revit.Async.dll</HintPath>
       <Private>True</Private>
       <EmbedInteropTypes>False</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="RevitGeometryExporter">
-      <HintPath>O:\Etalon Project\KPO\СФП\fedor.aleksandrov\Библиотеки\RevitGeometryExporter.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -1,6 +1,7 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.PointClouds;
-using RevitGeometryExporter;
+using Autodesk.Revit.UI;
+//using RevitGeometryExporter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,7 +52,7 @@ namespace PointCloudAnalyze.Models
 
             List<XYZ> points = GetPointsInside(StepRevit, Cloud, BB);
 
-            ExportGeometryToXml.ExportPoints(points, "p");
+          //  ExportGeometryToXml.ExportPoints(points, "p");
 
 
             SlabShapeEditor editor = Floor.SlabShapeEditor;
@@ -86,14 +87,14 @@ namespace PointCloudAnalyze.Models
         {
             List<XYZ> points = new List<XYZ>();
 
-            ExportGeometryToXml.ExportSolid(bb.CreateSolidFromBoundingBox(), "Source");
+           // ExportGeometryToXml.ExportSolid(bb.CreateSolidFromBoundingBox(), "Source");
 
             List<BoundingBoxXYZ> bbs = SplitBoundingBox(bb, step);
 
             foreach (var bbSplit in bbs)
             {
                 XYZ p = GetPoint(bbSplit, cloud);
-                ExportGeometryToXml.ExportSolid(bbSplit.CreateSolidFromBoundingBox(), "SplitSource");
+               // ExportGeometryToXml.ExportSolid(bbSplit.CreateSolidFromBoundingBox(), "SplitSource");
                 if (p != null)
                 {
                     points.Add(p);
@@ -113,14 +114,14 @@ namespace PointCloudAnalyze.Models
             XYZ max = new XYZ(p.X + 500 / 304.8, p.Y + 500 / 304.8, newbb.Max.Z);
             XYZ min = new XYZ(p.X - 500 / 304.8, p.Y - 500 / 304.8, newbb.Min.Z);
 
-            bbpoint.Max = max;
-            bbpoint.Min = min;
-            ExportGeometryToXml.ExportSolid(bbpoint.CreateSolidFromBoundingBox(), "sketchP");
+                bbpoint.Max = max;
+                bbpoint.Min = min;
+            //ExportGeometryToXml.ExportSolid(bbpoint.CreateSolidFromBoundingBox(), "sketchP");
 
             XYZ result = GetPoint(bbpoint, cloud);
 
-            if (result != null)
-            {
+                if (result != null)
+                {
                 return Math.Round(Math.Abs(result.Z - p.Z),3);
             }
             else
@@ -188,7 +189,7 @@ namespace PointCloudAnalyze.Models
             {
                 Transform transform = cloud.GetTransform();
 
-                ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
+                //ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
 
                 double z = points.Sum(xu => xu.Z) / points.Count();
                 double x = points.Sum(xu => xu.X) / points.Count();
@@ -206,6 +207,47 @@ namespace PointCloudAnalyze.Models
             }
         }
 
+
+        public static List<XYZ> GetPoints(BoundingBoxXYZ bb, PointCloudInstance cloud, int count)
+        {
+            List<Plane> planes = new List<Plane>
+            {
+
+                Plane.CreateByNormalAndOrigin(XYZ.BasisX,bb.Min),
+                Plane.CreateByNormalAndOrigin(-XYZ.BasisX,bb.Max),
+                Plane.CreateByNormalAndOrigin(XYZ.BasisY,bb.Min),
+                Plane.CreateByNormalAndOrigin(-XYZ.BasisY,bb.Max),
+                Plane.CreateByNormalAndOrigin(XYZ.BasisZ,bb.Min),
+                Plane.CreateByNormalAndOrigin(-XYZ.BasisZ,bb.Max)
+
+
+            };
+
+            PointCloudFilter filter = PointCloudFilterFactory.CreateMultiPlaneFilter(planes);
+            List<XYZ> points = cloud
+                      .GetPoints(filter, 1, count)
+                      .Select(xo => (XYZ)xo)
+                      .ToList();
+
+            return points;
+        }
+
+         public static XYZ GetMiddlePoint(PointCloudInstance cloud, List<XYZ> points )
+        {
+            Transform transform = cloud.GetTransform();
+
+            //ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
+
+            double z = points.Sum(xu => xu.Z) / points.Count();
+            double x = points.Sum(xu => xu.X) / points.Count();
+            double y = points.Sum(xu => xu.Y) / points.Count();
+
+            XYZ p = new XYZ(x, y, z);
+            //XYZ p = new XYZ(x, y, z) + transform.Origin;
+            p = transform.OfPoint(p);
+
+            return p;
+        }
 
     }
 }

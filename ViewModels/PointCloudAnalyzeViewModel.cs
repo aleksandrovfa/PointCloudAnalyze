@@ -4,7 +4,7 @@ using PointCloudAnalyze.Core;
 using PointCloudAnalyze.Properties;
 using PointCloudAnalyze.ViewModels.Utils;
 using PointCloudAnalyze.Models;
-using RevitGeometryExporter;
+//using RevitGeometryExporter;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -57,8 +57,8 @@ namespace PointCloudAnalyze.ViewModels
 
                 await RevitTask.RunAsync(app =>
                 {
-                    ExportGeometryToXml.FolderName = ((RbsLogger.Logger)Debug.Listeners[0]).filePath2;
-                    ExportGeometryToXml.ExportUnits = ExportUnits.Mm;
+                    //ExportGeometryToXml.FolderName = ((RbsLogger.Logger)Debug.Listeners[0]).filePath2;
+                    //ExportGeometryToXml.ExportUnits = ExportUnits.Mm;
 
 
                     if (!(RevitApi.Doc.ActiveView is View3D))
