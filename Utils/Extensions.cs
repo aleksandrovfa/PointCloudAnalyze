@@ -64,6 +64,38 @@ namespace PointCloudAnalyze.Models
             return newbb;
         }
 
+
+        public static List<BoundingBoxXYZ> SplitBoundingBox(this BoundingBoxXYZ bb, double step)
+        {
+            Transform transform = bb.Transform;
+
+
+            BoundingBoxXYZ newbb = new BoundingBoxXYZ();
+            newbb.Max = transform.OfPoint(bb.Max);
+            newbb.Min = transform.OfPoint(bb.Min);
+
+            List<BoundingBoxXYZ> result = new List<BoundingBoxXYZ>();
+
+            double minX = newbb.Min.X;
+            double minY = newbb.Min.Y;
+            double maxX = newbb.Max.X;
+            double maxY = newbb.Max.Y;
+
+            for (double x = minX; x < maxX; x += step)
+            {
+                for (double y = minY; y < maxY; y += step)
+                {
+                    BoundingBoxXYZ subBox = new BoundingBoxXYZ();
+                    subBox.Min = new XYZ(x, y, newbb.Min.Z);
+                    subBox.Max = new XYZ(Math.Min(x + step, maxX), Math.Min(y + step, maxY), newbb.Max.Z);
+                    result.Add(subBox);
+                }
+            }
+
+            return result;
+        }
+
+
         public static T GetElementFromBoundingBox<T>(this BoundingBoxXYZ bb) where T : Element
         {
             BoundingBoxXYZ newbb = bb.SetTransform();
@@ -96,6 +128,21 @@ namespace PointCloudAnalyze.Models
             return null;
         }
 
+
+        public static List<Plane> GetPlanes(this BoundingBoxXYZ bb)
+        {
+            List<Plane> planes = new List<Plane>
+            {
+                Plane.CreateByNormalAndOrigin(XYZ.BasisX,bb.Min),
+                Plane.CreateByNormalAndOrigin(-XYZ.BasisX,bb.Max),
+                Plane.CreateByNormalAndOrigin(XYZ.BasisY,bb.Min),
+                Plane.CreateByNormalAndOrigin(-XYZ.BasisY,bb.Max),
+                Plane.CreateByNormalAndOrigin(XYZ.BasisZ,bb.Min),
+                Plane.CreateByNormalAndOrigin(-XYZ.BasisZ,bb.Max)
+            };
+
+            return planes;
+        }
 
         public static bool Contains(this BoundingBoxXYZ bb, XYZ p)
         {

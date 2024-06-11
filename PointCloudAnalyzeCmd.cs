@@ -38,7 +38,7 @@ namespace PointCloudAnalyze
 
             DateTime time = GetNetworkTime();
 
-            if (time > new DateTime(2024, 6, 23))
+            if (time > new DateTime(2024, 6, 15))
             {
                 if(MessageBox.Show("Триальная версия закончилась. https://t.me/aleksandrov_fa", "Ошибка!", MessageBoxButton.OK,MessageBoxImage.Error) == MessageBoxResult.OK)
                 {

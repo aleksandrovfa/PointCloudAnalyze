@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Transform = Autodesk.Revit.DB.Transform;
+using Settings = PointCloudAnalyze.Properties.Settings;
 
 namespace PointCloudAnalyze.Models
 {
@@ -19,22 +20,20 @@ namespace PointCloudAnalyze.Models
 
         public Floor Floor { get; set; }
         public PointCloudInstance Cloud { get; set; }
-        public double StepRevit { get; set; }
+
 
         public BoundingBoxXYZ BB { get; set; }
-        public CloudToFloor(PointCloudInstance cloud, Floor floor, BoundingBoxXYZ bb, double step)
+        public CloudToFloor(PointCloudInstance cloud, Floor floor, BoundingBoxXYZ bb)
         {
             Cloud = cloud;
             Floor = floor;
-            StepRevit = step;
+            //    StepRevit = step;
             BB = bb;
         }
 
-        public void Start()
+        public void StartInside()
         {
-
-
-            List<BoundingBoxXYZ> bbs = SplitBoundingBox(BB, StepRevit);
+            List<BoundingBoxXYZ> bbs = BB.SplitBoundingBox(Settings.Default.InsideStep / 304.8);
 
             if (bbs.Count() > 200)
             {
@@ -50,12 +49,23 @@ namespace PointCloudAnalyze.Models
 
 
 
-            List<XYZ> points = GetPointsInside(StepRevit, Cloud, BB);
+            List<XYZ> points = GetPointsInside(Settings.Default.InsideStep / 304.8, Cloud, BB);
 
-          //  ExportGeometryToXml.ExportPoints(points, "p");
-
+            //  ExportGeometryToXml.ExportPoints(points, "p");
 
             SlabShapeEditor editor = Floor.SlabShapeEditor;
+
+            foreach (XYZ point in points)
+            {
+                editor.DrawPoint(point);
+            }
+        }
+
+
+        public void StartBorder()
+        {
+            SlabShapeEditor editor = Floor.SlabShapeEditor;
+
 
             foreach (SlabShapeVertex vertex in Floor.SlabShapeEditor.SlabShapeVertices)
             {
@@ -64,37 +74,28 @@ namespace PointCloudAnalyze.Models
                     XYZ p = vertex.Position;
                     if (BB.Contains(p))
                     {
-                        //if (!points.Contains(p, new ComparePoint()))
-                        //{
                         double offset = GetOffsetPointSketch(p, Cloud, BB);
                         if (offset != 0)
                         {
                             editor.ModifySubElement(vertex, offset);
                         }
-                        // }
                     }
                 }
             }
-
-            foreach (XYZ point in points)
-            {
-                editor.DrawPoint(point);
-            }
-
         }
 
         private static List<XYZ> GetPointsInside(double step, PointCloudInstance cloud, BoundingBoxXYZ bb)
         {
             List<XYZ> points = new List<XYZ>();
 
-           // ExportGeometryToXml.ExportSolid(bb.CreateSolidFromBoundingBox(), "Source");
+            // ExportGeometryToXml.ExportSolid(bb.CreateSolidFromBoundingBox(), "Source");
 
-            List<BoundingBoxXYZ> bbs = SplitBoundingBox(bb, step);
+            List<BoundingBoxXYZ> bbs = bb.SplitBoundingBox( step);
 
             foreach (var bbSplit in bbs)
             {
-                XYZ p = GetPoint(bbSplit, cloud);
-               // ExportGeometryToXml.ExportSolid(bbSplit.CreateSolidFromBoundingBox(), "SplitSource");
+                XYZ p = GetPointInside(bbSplit, cloud);
+                // ExportGeometryToXml.ExportSolid(bbSplit.CreateSolidFromBoundingBox(), "SplitSource");
                 if (p != null)
                 {
                     points.Add(p);
@@ -111,18 +112,24 @@ namespace PointCloudAnalyze.Models
 
             BoundingBoxXYZ bbpoint = new BoundingBoxXYZ();
 
-            XYZ max = new XYZ(p.X + 500 / 304.8, p.Y + 500 / 304.8, newbb.Max.Z);
-            XYZ min = new XYZ(p.X - 500 / 304.8, p.Y - 500 / 304.8, newbb.Min.Z);
+            XYZ max = new XYZ(
+                p.X + (Settings.Default.BorderSizeBox / 2) / 304.8, 
+                p.Y + (Settings.Default.BorderSizeBox / 2) / 304.8, 
+                newbb.Max.Z);
+            XYZ min = new XYZ(
+                p.X - (Settings.Default.BorderSizeBox/2) / 304.8, 
+                p.Y - (Settings.Default.BorderSizeBox / 2) / 304.8, 
+                newbb.Min.Z);
 
-                bbpoint.Max = max;
-                bbpoint.Min = min;
+            bbpoint.Max = max;
+            bbpoint.Min = min;
             //ExportGeometryToXml.ExportSolid(bbpoint.CreateSolidFromBoundingBox(), "sketchP");
 
-            XYZ result = GetPoint(bbpoint, cloud);
+            XYZ result = GetPointBorder(bbpoint, cloud);
 
-                if (result != null)
-                {
-                return Math.Round(Math.Abs(result.Z - p.Z),3);
+            if (result != null)
+            {
+                return Math.Round(Math.Abs(result.Z - p.Z), 3);
             }
             else
             {
@@ -130,58 +137,13 @@ namespace PointCloudAnalyze.Models
             }
         }
 
-       
-
-
-        public static List<BoundingBoxXYZ> SplitBoundingBox(BoundingBoxXYZ bb, double step)
+        public static XYZ GetPointInside(BoundingBoxXYZ bb, PointCloudInstance cloud)
         {
-            Transform transform = bb.Transform;
-
-
-            BoundingBoxXYZ newbb = new BoundingBoxXYZ();
-            newbb.Max = transform.OfPoint(bb.Max);
-            newbb.Min = transform.OfPoint(bb.Min);
-
-            List<BoundingBoxXYZ> result = new List<BoundingBoxXYZ>();
-
-            double minX = newbb.Min.X;
-            double minY = newbb.Min.Y;
-            double maxX = newbb.Max.X;
-            double maxY = newbb.Max.Y;
-
-            for (double x = minX; x < maxX; x += step)
-            {
-                for (double y = minY; y < maxY; y += step)
-                {
-                    BoundingBoxXYZ subBox = new BoundingBoxXYZ();
-                    subBox.Min = new XYZ(x, y, newbb.Min.Z);
-                    subBox.Max = new XYZ(Math.Min(x + step, maxX), Math.Min(y + step, maxY), newbb.Max.Z);
-                    result.Add(subBox);
-                }
-            }
-
-            return result;
-        }
-
-
-        public static XYZ GetPoint(BoundingBoxXYZ bb, PointCloudInstance cloud)
-        {
-            List<Plane> planes = new List<Plane>
-            {
-
-                Plane.CreateByNormalAndOrigin(XYZ.BasisX,bb.Min),
-                Plane.CreateByNormalAndOrigin(-XYZ.BasisX,bb.Max),
-                Plane.CreateByNormalAndOrigin(XYZ.BasisY,bb.Min),
-                Plane.CreateByNormalAndOrigin(-XYZ.BasisY,bb.Max),
-                Plane.CreateByNormalAndOrigin(XYZ.BasisZ,bb.Min),
-                Plane.CreateByNormalAndOrigin(-XYZ.BasisZ,bb.Max)
-
-
-            };
+            List<Plane> planes = bb.GetPlanes();
 
             PointCloudFilter filter = PointCloudFilterFactory.CreateMultiPlaneFilter(planes);
             List<XYZ> points = cloud
-                      .GetPoints(filter, 1, 20)
+                      .GetPoints(filter, 0.001, Settings.Default.InsidePointCount)
                       .Select(xo => (XYZ)xo)
                       .ToList();
 
@@ -190,14 +152,54 @@ namespace PointCloudAnalyze.Models
                 Transform transform = cloud.GetTransform();
 
                 //ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
+                //double z = points.Sum(xu => xu.Z) / points.Count();
+                //double x = points.Sum(xu => xu.X) / points.Count();
+                //double y = points.Sum(xu => xu.Y) / points.Count();
 
-                double z = points.Sum(xu => xu.Z) / points.Count();
-                double x = points.Sum(xu => xu.X) / points.Count();
+                //double z = points.Min(xu => xu.Z);
+                //double x = points.Min(xu => xu.X);
+                //double y = points.Min(xu => xu.Y);
+
+
+                //XYZ p = new XYZ(x, y, z);
+                XYZ p = points.OrderByDescending(x => x.Z).First();
+                p = transform.OfPoint(p);
+
+                if (Settings.Default.InsideExactly)
+                {
+                    p = new XYZ((bb.Max.X + bb.Min.X) / 2, (bb.Max.Y + bb.Min.Y) / 2, p.Z);
+                }
+
+                return p;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        public static XYZ GetPointBorder(BoundingBoxXYZ bb, PointCloudInstance cloud)
+        {
+            List<Plane> planes = bb.GetPlanes();
+
+            PointCloudFilter filter = PointCloudFilterFactory.CreateMultiPlaneFilter(planes);
+            List<XYZ> points = cloud
+                      .GetPoints(filter, 0.001, Settings.Default.BorderPointCount)
+                      .Select(xo => (XYZ)xo)
+                      .ToList();
+
+            if (points.Count > 0)
+            {
+                Transform transform = cloud.GetTransform();
+
+                //ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
+                double z = points.Sum(xu => xu.Z) / points.Count(); ;
+                double x = points.Sum(xu => xu.X) / points.Count(); ;
                 double y = points.Sum(xu => xu.Y) / points.Count();
 
+
                 XYZ p = new XYZ(x, y, z);
-                //XYZ p = new XYZ(x, y, z) + transform.Origin;
                 p = transform.OfPoint(p);
+              
 
                 return p;
             }
@@ -208,46 +210,39 @@ namespace PointCloudAnalyze.Models
         }
 
 
-        public static List<XYZ> GetPoints(BoundingBoxXYZ bb, PointCloudInstance cloud, int count)
-        {
-            List<Plane> planes = new List<Plane>
-            {
-
-                Plane.CreateByNormalAndOrigin(XYZ.BasisX,bb.Min),
-                Plane.CreateByNormalAndOrigin(-XYZ.BasisX,bb.Max),
-                Plane.CreateByNormalAndOrigin(XYZ.BasisY,bb.Min),
-                Plane.CreateByNormalAndOrigin(-XYZ.BasisY,bb.Max),
-                Plane.CreateByNormalAndOrigin(XYZ.BasisZ,bb.Min),
-                Plane.CreateByNormalAndOrigin(-XYZ.BasisZ,bb.Max)
 
 
-            };
+        //public static List<XYZ> GetPoints(BoundingBoxXYZ bb, PointCloudInstance cloud, int count)
+        //{
+        //    List<Plane> planes = bb.GetPlanes();
 
-            PointCloudFilter filter = PointCloudFilterFactory.CreateMultiPlaneFilter(planes);
-            List<XYZ> points = cloud
-                      .GetPoints(filter, 1, count)
-                      .Select(xo => (XYZ)xo)
-                      .ToList();
+        //    PointCloudFilter filter = PointCloudFilterFactory.CreateMultiPlaneFilter(planes);
+        //    List<XYZ> points = cloud
+        //              .GetPoints(filter, 1, count)
+        //              .Select(xo => (XYZ)xo)
+        //              .ToList();
 
-            return points;
-        }
+        //    return points;
+        //}
 
-         public static XYZ GetMiddlePoint(PointCloudInstance cloud, List<XYZ> points )
-        {
-            Transform transform = cloud.GetTransform();
+        //public static XYZ GetMiddlePoint(PointCloudInstance cloud, List<XYZ> points)
+        //{
+        //    Transform transform = cloud.GetTransform();
 
-            //ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
+        //    //ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
 
-            double z = points.Sum(xu => xu.Z) / points.Count();
-            double x = points.Sum(xu => xu.X) / points.Count();
-            double y = points.Sum(xu => xu.Y) / points.Count();
+        //    double z = points.Sum(xu => xu.Z) / points.Count();
+        //    double x = points.Sum(xu => xu.X) / points.Count();
+        //    double y = points.Sum(xu => xu.Y) / points.Count();
 
-            XYZ p = new XYZ(x, y, z);
-            //XYZ p = new XYZ(x, y, z) + transform.Origin;
-            p = transform.OfPoint(p);
+        //    XYZ p = new XYZ(x, y, z);
+        //    //XYZ p = new XYZ(x, y, z) + transform.Origin;
+        //    p = transform.OfPoint(p);
 
-            return p;
-        }
+        //    return p;
+        //}
+
+       
 
     }
 }

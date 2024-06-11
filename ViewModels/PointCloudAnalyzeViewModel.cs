@@ -119,9 +119,6 @@ namespace PointCloudAnalyze.ViewModels
             }
         }
 
-        public double StepRevit { get => InsideStep / 304.8; }
-
-
         public PointCloudAnalyzeViewModel()
         {
 
@@ -168,12 +165,19 @@ namespace PointCloudAnalyze.ViewModels
                         return;
                     }
 
-                    CloudToFloor cloudToFloor = new CloudToFloor(cloud, floor, bb, StepRevit);
+                    CloudToFloor cloudToFloor = new CloudToFloor(cloud, floor, bb);
 
                     Transaction tr = new Transaction(RevitApi.Doc, "CloudToFloor");
                     tr.Start();
-
-                    cloudToFloor.Start();
+                    if (InsideCreate)
+                    {
+                        cloudToFloor.StartInside();
+                    }
+                    if (BorderCreate)
+                    {
+                        cloudToFloor.StartBorder();
+                    }
+                   
 
                     tr.Commit();
 
