@@ -27,23 +27,100 @@ namespace PointCloudAnalyze.ViewModels
         private ICommand _startCommand;
         public ICommand StartCommand => _startCommand ?? (_startCommand = new RelayCommand(param => Start()));
 
-        public double Step
+        public bool InsideCreate
         {
             get
             {
-                return Settings.Default.Step;
+                return Settings.Default.InsideCreate;
             }
             set
             {
-                Settings.Default.Step = value;
+                Settings.Default.InsideCreate = value;
                 Settings.Default.Save();
-                OnPropertyChanged(nameof(Step));
+                OnPropertyChanged(nameof(InsideCreate));
+            }
+        }
+        public int InsideStep
+        {
+            get
+            {
+                return Settings.Default.InsideStep;
+            }
+            set
+            {
+                Settings.Default.InsideStep = value;
+                Settings.Default.Save();
+                OnPropertyChanged(nameof(InsideStep));
+            }
+        }
+        public int InsidePointCount
+        {
+            get
+            {
+                return Settings.Default.InsidePointCount;
+            }
+            set
+            {
+                Settings.Default.InsidePointCount = value;
+                Settings.Default.Save();
+                OnPropertyChanged(nameof(InsidePointCount));
+            }
+        }
+        public bool InsideExactly
+        {
+            get
+            {
+                return Settings.Default.InsideExactly;
+            }
+            set
+            {
+                Settings.Default.InsideExactly = value;
+                Settings.Default.Save();
+                OnPropertyChanged(nameof(InsideExactly));
+            }
+        }
+        public bool BorderCreate
+        {
+            get
+            {
+                return Settings.Default.BorderCreate;
+            }
+            set
+            {
+                Settings.Default.BorderCreate = value;
+                Settings.Default.Save();
+                OnPropertyChanged(nameof(BorderCreate));
+            }
+        }
+        public int BorderSizeBox
+        {
+            get
+            {
+                return Settings.Default.BorderSizeBox;
+            }
+            set
+            {
+                Settings.Default.BorderSizeBox = value;
+                Settings.Default.Save();
+                OnPropertyChanged(nameof(BorderSizeBox));
+            }
+        }
+        public int BorderPointCount
+        {
+            get
+            {
+                return Settings.Default.BorderPointCount;
+            }
+            set
+            {
+                Settings.Default.BorderPointCount = value;
+                Settings.Default.Save();
+                OnPropertyChanged(nameof(BorderPointCount));
             }
         }
 
-        public double StepRevit { get => Step / 304.8; }
+        public double StepRevit { get => InsideStep / 304.8; }
 
-        public double CountPointInSplitBox { get; set; } = 5;
 
         public PointCloudAnalyzeViewModel()
         {

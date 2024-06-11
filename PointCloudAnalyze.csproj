@@ -39,7 +39,7 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="Revit.Async">
-      <HintPath>O:\Etalon Project\KPO\Revit\!_БИБЛИОТЕКА РЕСУРСОВ\07_ПЛАГИНЫ\ЭталонПроект\DLL\__Эталон Проект_2019\Revit.Async.dll</HintPath>
+      <HintPath>..\..\..\Downloads\Telegram Desktop\Перекрытие по облаку\PointCloudAnalyze\Revit.Async.dll</HintPath>
       <Private>True</Private>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
