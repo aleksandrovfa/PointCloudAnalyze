@@ -165,6 +165,32 @@ namespace PointCloudAnalyze.Models
             T elem = RevitApi.Doc.GetElement(refer.ElementId) as T;
             return elem;
         }
+
+        public static IEnumerable<XYZ> Divide(this Curve curve, double step)
+        {
+            if (curve.Length > step)
+            {
+                var startParameter = curve.GetEndParameter(0);
+                var endParameter = curve.GetEndParameter(1);
+                var parameterStep = (endParameter - startParameter) / (curve.Length / step);
+                var parameterSum = startParameter;
+
+                do
+                {
+                    yield return curve.Evaluate(parameterSum, false);
+                    parameterSum += parameterStep;
+                }
+                while (parameterSum < endParameter);
+
+                if (Math.Abs(parameterSum - endParameter) > 0.0001)
+                    yield return curve.GetEndPoint(1);
+            }
+            else
+            {
+                yield return curve.GetEndPoint(0);
+                yield return curve.GetEndPoint(1);
+            }
+        }
     }
 
 

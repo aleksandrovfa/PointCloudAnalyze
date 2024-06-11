@@ -12,6 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Transform = Autodesk.Revit.DB.Transform;
 using Settings = PointCloudAnalyze.Properties.Settings;
+using System.Diagnostics;
+using PointCloudAnalyze.Core;
+using System.Net;
 
 namespace PointCloudAnalyze.Models
 {
@@ -33,22 +36,6 @@ namespace PointCloudAnalyze.Models
 
         public void StartInside()
         {
-            List<BoundingBoxXYZ> bbs = BB.SplitBoundingBox(Settings.Default.InsideStep / 304.8);
-
-            if (bbs.Count() > 200)
-            {
-                var result = MessageBox.Show($"Ограничивающая рамка разбилась на {bbs.Count} частей. " +
-                    $"Анализ может занять длительное время. \n\n" +
-                    $"Вы уверены что хотите продолжить?", "Проблемка.", MessageBoxButton.YesNo);
-
-                if (result == MessageBoxResult.No)
-                {
-                    return;
-                }
-            }
-
-
-
             List<XYZ> points = GetPointsInside(Settings.Default.InsideStep / 304.8, Cloud, BB);
 
             //  ExportGeometryToXml.ExportPoints(points, "p");
@@ -62,6 +49,8 @@ namespace PointCloudAnalyze.Models
         }
 
 
+
+        
         public void StartBorder()
         {
             SlabShapeEditor editor = Floor.SlabShapeEditor;
@@ -84,13 +73,62 @@ namespace PointCloudAnalyze.Models
             }
         }
 
+        public void StartSketch(double step)
+        {
+
+            Sketch sketch = RevitApi.Doc.GetElement(Floor.SketchId) as Sketch; ;
+
+            SketchEditScope sketchEditScope = new SketchEditScope(RevitApi.Doc, "Replace line with an arc");
+            sketchEditScope.Start(sketch.Id);
+
+            using (Transaction transaction = new Transaction(RevitApi.Doc, "Редактирование эскиза"))
+            {
+                transaction.Start();
+                foreach (CurveArray curveArray in sketch.Profile)
+                {
+                    foreach (Curve curve in curveArray)
+                    {
+                        Line line = curve as Line;
+                        if (line != null)
+                        {
+                            double length = curve.Length; // длина кривой
+
+                            if (length > step)
+                            {
+                                List<XYZ> points = curve.Divide(step).ToList();
+
+                                XYZ pLast1 = points[points.Count - 1];
+                                XYZ pLast2 = points[points.Count - 2];
+                                if (pLast1.DistanceTo(pLast2) < RevitApi.App.ShortCurveTolerance)
+                                {
+                                    points.RemoveAt(points.Count - 2);
+                                }
+
+                                RevitApi.Doc.Delete(line.Reference.ElementId);
+                                for (int i = 0; i < points.Count() - 1; i++)
+                                {
+                                    Line line1 = Line.CreateBound(points[i], points[i + 1]);
+                                    RevitApi.Doc.Create.NewModelCurve(line1, sketch.SketchPlane);
+                                }
+
+                            }
+                        }
+                    }
+
+                }
+                transaction.Commit();
+            }
+            sketchEditScope.Commit(new FailuresPreprocessor());
+        }
+
+
         private static List<XYZ> GetPointsInside(double step, PointCloudInstance cloud, BoundingBoxXYZ bb)
         {
             List<XYZ> points = new List<XYZ>();
 
             // ExportGeometryToXml.ExportSolid(bb.CreateSolidFromBoundingBox(), "Source");
 
-            List<BoundingBoxXYZ> bbs = bb.SplitBoundingBox( step);
+            List<BoundingBoxXYZ> bbs = bb.SplitBoundingBox(step);
 
             foreach (var bbSplit in bbs)
             {
@@ -113,12 +151,12 @@ namespace PointCloudAnalyze.Models
             BoundingBoxXYZ bbpoint = new BoundingBoxXYZ();
 
             XYZ max = new XYZ(
-                p.X + (Settings.Default.BorderSizeBox / 2) / 304.8, 
-                p.Y + (Settings.Default.BorderSizeBox / 2) / 304.8, 
+                p.X + (Settings.Default.BorderSizeBox / 2) / 304.8,
+                p.Y + (Settings.Default.BorderSizeBox / 2) / 304.8,
                 newbb.Max.Z);
             XYZ min = new XYZ(
-                p.X - (Settings.Default.BorderSizeBox/2) / 304.8, 
-                p.Y - (Settings.Default.BorderSizeBox / 2) / 304.8, 
+                p.X - (Settings.Default.BorderSizeBox / 2) / 304.8,
+                p.Y - (Settings.Default.BorderSizeBox / 2) / 304.8,
                 newbb.Min.Z);
 
             bbpoint.Max = max;
@@ -152,17 +190,24 @@ namespace PointCloudAnalyze.Models
                 Transform transform = cloud.GetTransform();
 
                 //ExportGeometryToXml.ExportPoints(points.Select(xf => transform.OfPoint(xf)), "psplit");
-                //double z = points.Sum(xu => xu.Z) / points.Count();
-                //double x = points.Sum(xu => xu.X) / points.Count();
-                //double y = points.Sum(xu => xu.Y) / points.Count();
+                XYZ p = new XYZ();
+                if (Settings.Default.InsidePointLocation == 0)
+                {
+                    p = points.OrderBy(x => x.Z).First();
+                }
+                if (Settings.Default.InsidePointLocation == 2)
+                {
+                    p = points.OrderBy(x => x.Z).Last();
+                }
+                if (Settings.Default.InsidePointLocation == 1)
+                {
+                    double z = points.Sum(xu => xu.Z) / points.Count();
+                    double x = points.Sum(xu => xu.X) / points.Count();
+                    double y = points.Sum(xu => xu.Y) / points.Count();
 
-                //double z = points.Min(xu => xu.Z);
-                //double x = points.Min(xu => xu.X);
-                //double y = points.Min(xu => xu.Y);
+                    p = new XYZ(x, y, z);
+                }
 
-
-                //XYZ p = new XYZ(x, y, z);
-                XYZ p = points.OrderByDescending(x => x.Z).First();
                 p = transform.OfPoint(p);
 
                 if (Settings.Default.InsideExactly)
@@ -199,7 +244,7 @@ namespace PointCloudAnalyze.Models
 
                 XYZ p = new XYZ(x, y, z);
                 p = transform.OfPoint(p);
-              
+
 
                 return p;
             }
@@ -210,7 +255,14 @@ namespace PointCloudAnalyze.Models
         }
 
 
-
+        public class FailuresPreprocessor : IFailuresPreprocessor
+        {
+            public FailureProcessingResult PreprocessFailures(
+              FailuresAccessor failuresAccessor)
+            {
+                return FailureProcessingResult.WaitForUserInput;
+            }
+        }
 
         //public static List<XYZ> GetPoints(BoundingBoxXYZ bb, PointCloudInstance cloud, int count)
         //{
@@ -242,7 +294,7 @@ namespace PointCloudAnalyze.Models
         //    return p;
         //}
 
-       
+
 
     }
 }

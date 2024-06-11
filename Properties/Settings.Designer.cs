@@ -106,5 +106,17 @@ namespace PointCloudAnalyze.Properties {
                 this["BorderPointCount"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int InsidePointLocation {
+            get {
+                return ((int)(this["InsidePointLocation"]));
+            }
+            set {
+                this["InsidePointLocation"] = value;
+            }
+        }
     }
 }

@@ -38,9 +38,9 @@ namespace PointCloudAnalyze
 
             DateTime time = GetNetworkTime();
 
-            if (time > new DateTime(2024, 6, 15))
+            if (time > new DateTime(2024, 6, 14))
             {
-                if(MessageBox.Show("Триальная версия закончилась. https://t.me/aleksandrov_fa", "Ошибка!", MessageBoxButton.OK,MessageBoxImage.Error) == MessageBoxResult.OK)
+                if(MessageBox.Show("Триальная версия закончилась.\nСвяжитесь со мной для продолжения сотрудничества.\nhttps://t.me/aleksandrov_fa", "Ошибка!", MessageBoxButton.OK,MessageBoxImage.Error) == MessageBoxResult.OK)
                 {
                     System.Diagnostics.Process.Start("https://t.me/aleksandrov_fa");
                 }

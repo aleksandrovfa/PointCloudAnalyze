@@ -79,6 +79,21 @@ namespace PointCloudAnalyze.ViewModels
                 OnPropertyChanged(nameof(InsideExactly));
             }
         }
+
+        public int InsidePointLocation
+        {
+            get
+            {
+                return Settings.Default.InsidePointLocation;
+            }
+            set
+            {
+                Settings.Default.InsidePointLocation = value;
+                Settings.Default.Save();
+                OnPropertyChanged(nameof(InsidePointLocation));
+            }
+        }
+
         public bool BorderCreate
         {
             get
@@ -168,16 +183,30 @@ namespace PointCloudAnalyze.ViewModels
                     CloudToFloor cloudToFloor = new CloudToFloor(cloud, floor, bb);
 
                     Transaction tr = new Transaction(RevitApi.Doc, "CloudToFloor");
+                    //cloudToFloor.StartSketch(InsideStep/304.8);
                     tr.Start();
                     if (InsideCreate)
                     {
+                        List<BoundingBoxXYZ> bbs = bb.SplitBoundingBox(Settings.Default.InsideStep / 304.8);
+
+                        if (bbs.Count() > 200)
+                        {
+                            var result = MessageBox.Show($"Ограничивающая рамка разбилась на {bbs.Count} частей. " +
+                                $"Анализ может занять длительное время. \n\n" +
+                                $"Вы уверены что хотите продолжить?", "Проблемка.", MessageBoxButton.YesNo);
+
+                            if (result == MessageBoxResult.No)
+                            {
+                                return;
+                            }
+                        }
                         cloudToFloor.StartInside();
                     }
                     if (BorderCreate)
                     {
                         cloudToFloor.StartBorder();
                     }
-                   
+
 
                     tr.Commit();
 
@@ -188,7 +217,7 @@ namespace PointCloudAnalyze.ViewModels
                 MessageBox.Show(e.ToString(), "Что то поломалось... Скоро починим");
             }
 
-           
+
         }
     }
 }

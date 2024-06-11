@@ -7,7 +7,7 @@
         xmlns:viewmodels="clr-namespace:PointCloudAnalyze.ViewModels"
         d:DataContext="{d:DesignInstance Type=viewmodels:PointCloudAnalyzeViewModel}"
         mc:Ignorable="d"
-        Height="268"
+        Height="360"
         Width="280"
         ResizeMode="NoResize"
         Title="Перекрытие к облаку">
@@ -35,6 +35,8 @@
                     <RowDefinition  Height="Auto " />
                     <RowDefinition  Height="Auto " />
                     <RowDefinition  Height="Auto " />
+                    <RowDefinition  Height="Auto " />
+                    <RowDefinition  Height="Auto " />
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Column="0"
                            Grid.Row="0"
@@ -47,28 +49,61 @@
                          Text="{Binding InsideStep}" />
                 <TextBlock Grid.Column="2"
                            Grid.Row="0"
-                           Text="мм"
+                           Text="мм."
                            Margin="5"
                            VerticalAlignment="Center" />
-                <TextBlock Grid.Column="0"
+                <CheckBox  Grid.Column="0"
                            Grid.Row="1"
+                           Margin="5"
+                           IsChecked="{Binding InsideExactly}"
+                           Content="Точно соблюдать шаг" />
+                <TextBlock Grid.Column="0"
+                           Grid.Row="2"
                            Text="Кол-во точек в ячейке:"
                            Margin="5"
                            VerticalAlignment="Center" />
                 <TextBox Grid.Column="1"
-                         Grid.Row="1"
+                         Grid.Row="2"
                          Margin="5"
                          Text="{Binding InsidePointCount}"/>
                 <TextBlock Grid.Column="2"
-                           Grid.Row="1"
-                           Text="шт"
+                           Grid.Row="2"
+                           Text="шт."
                            Margin="5"
                            VerticalAlignment="Center" />
-                <CheckBox  Grid.Column="0"
-                           Grid.Row="2"
+                
+                <TextBlock Grid.Column="0"
+                           Grid.ColumnSpan="3"
+                           Grid.Row="3"
+                           Text="Выбор используемой точки из ячейки:"
                            Margin="5"
-                           IsChecked="{Binding InsideExactly}"
-                           Content="Точно соблюдать шаг" />
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+                <Slider Grid.Column="0"
+                        Grid.ColumnSpan="3"
+                        Value="{Binding InsidePointLocation}"
+                        Grid.Row="4"
+                        Margin="20 5 20 5"
+                        Maximum="2"
+                        Ticks="0,1,2"
+                        TickPlacement="BottomRight"
+                        IsSnapToTickEnabled="True" />
+                <DockPanel Grid.Column="0"
+                           Grid.ColumnSpan="3"
+                           Grid.Row="5"
+                           Margin="5">
+                    <TextBlock Text="Нижняя"
+                               DockPanel.Dock="Left"
+                               HorizontalAlignment="Left"/>
+                    <TextBlock Text="Верхняя"
+                               DockPanel.Dock="Right" 
+                               HorizontalAlignment="Right"/>
+                    <TextBlock Text="Средняя" 
+                               HorizontalAlignment="Center"/>
+                </DockPanel>
+                           
+
+
             </Grid>
         </GroupBox>
         <GroupBox Grid.Row="1"
@@ -89,7 +124,7 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Column="0"
                            Grid.Row="0"
-                           Text="Размер ячейки"
+                           Text="Размер ячейки:"
                            Margin="5"
                            VerticalAlignment="Center" />
                 <TextBox Grid.Column="1"
@@ -98,7 +133,7 @@
                          Text="{Binding BorderSizeBox}" />
                 <TextBlock Grid.Column="2"
                            Grid.Row="0"
-                           Text="мм"
+                           Text="мм."
                            Margin="5"
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="0"
@@ -112,7 +147,7 @@
                          Text="{Binding BorderPointCount}" />
                 <TextBlock Grid.Column="2"
                            Grid.Row="1"
-                           Text="шт"
+                           Text="шт."
                            Margin="5"
                            VerticalAlignment="Center" />
             </Grid>

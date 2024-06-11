@@ -23,16 +23,26 @@ namespace PointCloudAnalyze.Views
     /// </summary>
     public partial class PointCloudAnalyzeView : Window
     {
+        private PointCloudAnalyzeViewModel viewModel;
         public PointCloudAnalyzeView()
         {
 
             InitializeComponent();
+
             this.Title = this.Title + $" (ver.{Assembly.GetExecutingAssembly().GetName().Version.ToString()})";
             Debug.WriteLine("InitializeComponent MainView");
-            PointCloudAnalyzeViewModel vm = new PointCloudAnalyzeViewModel();
-            vm.CloseRequest += (s, e) => this.Close();
-            DataContext = vm;
+            this.Closing += this.CompareMonolithView_Closing;
+            viewModel = new PointCloudAnalyzeViewModel();
+            viewModel.CloseRequest += (s, e) => this.Close();
+            DataContext = viewModel;
 
         }
+
+        private void CompareMonolithView_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            PointCloudAnalyzeCmd._view = null;
+        }
+
+
     }
 }
